@@ -17,18 +17,19 @@ DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_USER = os.getenv("DB_USER", "root")
 DB_PASSWORD = os.getenv("DB_PASSWORD", "")
 DB_NAME = os.getenv("DB_NAME", "defaultdb")
+# Leemos el puerto desde las variables de entorno, usando 3306 como respaldo
+DB_PORT = int(os.getenv("DB_PORT", 3306))
 
 def init_db():
-    """Función automática para crear la tabla de métricas si no existe"""
     try:
         connection = pymysql.connect(
             host=DB_HOST,
             user=DB_USER,
             password=DB_PASSWORD,
-            database=DB_NAME
+            database=DB_NAME,
+            port=DB_PORT
         )
         with connection.cursor() as cursor:
-            # Crear la tabla requerida por el flujo del informe
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS metrics (
                     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -40,7 +41,6 @@ def init_db():
                     network_out FLOAT NOT NULL
                 )
             """)
-            # Insertar un dato de prueba inicial si la tabla está vacía
             cursor.execute("SELECT COUNT(*) FROM metrics")
             if cursor.fetchone()[0] == 0:
                 cursor.execute("""
@@ -53,7 +53,6 @@ def init_db():
     except Exception as e:
         print(f"Error al inicializar la base de datos: {e}")
 
-# Llamamos a la inicialización al arrancar la API
 init_db()
 
 def get_db_connection():
@@ -63,6 +62,7 @@ def get_db_connection():
             user=DB_USER,
             password=DB_PASSWORD,
             database=DB_NAME,
+            port=DB_PORT,
             cursorclass=pymysql.cursors.DictCursor
         )
         return connection
